@@ -17,29 +17,29 @@ import model.entities.Seller;
 
 public class SellerDaoJDBC implements SellerDao{
 
-	
+
 	private Connection conn;
-	
+
 	public SellerDaoJDBC(Connection conn) {
 		this.conn = conn;
 	}
-	
+
 	@Override
 	public void inser(Seller objt) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void update(Seller obj) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void deleteById(Integer id) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -49,10 +49,10 @@ public class SellerDaoJDBC implements SellerDao{
 		try {
 			st = conn.prepareStatement(
 					"SELECT seller.*,department.Name as DepName "
-					+"FROM seller INNER JOIN department "
-					+"ON seller.DepartmentId = department.Id "
-					+"WHERE seller.Id = ?");
-					
+							+"FROM seller INNER JOIN department "
+							+"ON seller.DepartmentId = department.Id "
+							+"WHERE seller.Id = ?");
+
 			st.setInt(1, id);
 			rs = st.executeQuery();
 			if(rs.next()) {		//testar se veio algum resultado
@@ -67,7 +67,7 @@ public class SellerDaoJDBC implements SellerDao{
 			DB.closeStatement(st);
 			DB.closeResultSet(rs);
 		}
-		
+
 	}
 
 	private Seller instatiateSeller(ResultSet rs, Department dep) throws SQLException {
@@ -90,8 +90,39 @@ public class SellerDaoJDBC implements SellerDao{
 
 	@Override
 	public List<Seller> findAll() {
-		// TODO Auto-generated method stub
-		return null;
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		try {
+			st = conn.prepareStatement(
+					"SELECT seller.*,department.Name as DepName "
+							+ "FROM seller INNER JOIN department "
+							+ "ON seller.DepartmentId = department.Id "
+							+ "ORDER BY Name ");
+
+			rs = st.executeQuery();
+
+			List<Seller> list = new ArrayList<>();
+			Map<Integer, Department> map = new HashMap<>();	//mapa de todos os departamentos instanciados -> faz com que nao seja repetido o departamento e por sua vez criado amis que uma tabela dele
+
+			while(rs.next()) {		//testar se veio algum resultado
+
+				Department dep = map.get(rs.getInt("DepartmentId"));
+
+				if(dep == null) {
+					dep = instatiateDepartment(rs);	//instancia o departamento
+					map.put(rs.getInt("DepartmentId"), dep);	//salva no map
+				}
+
+				Seller obj = instatiateSeller(rs, dep);
+				list.add(obj);
+			}
+			return list;
+		} catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(st);
+			DB.closeResultSet(rs);
+		}
 	}
 
 	@Override
@@ -101,26 +132,26 @@ public class SellerDaoJDBC implements SellerDao{
 		try {
 			st = conn.prepareStatement(
 					"SELECT seller.*,department.Name as DepName "
-					+ "FROM seller INNER JOIN department "
-					+ "ON seller.DepartmentId = department.Id "
-					+ "WHERE DepartmentId = ? "
-					+ "ORDER BY Name ");
-					
+							+ "FROM seller INNER JOIN department "
+							+ "ON seller.DepartmentId = department.Id "
+							+ "WHERE DepartmentId = ? "
+							+ "ORDER BY Name ");
+
 			st.setInt(1, department.getId());
 			rs = st.executeQuery();
-			
+
 			List<Seller> list = new ArrayList<>();
 			Map<Integer, Department> map = new HashMap<>();	//mapa de todos os departamentos instanciados -> faz com que nao seja repetido o departamento e por sua vez criado amis que uma tabela dele
-			
+
 			while(rs.next()) {		//testar se veio algum resultado
-				
+
 				Department dep = map.get(rs.getInt("DepartmentId"));
-				
+
 				if(dep == null) {
 					dep = instatiateDepartment(rs);	//instancia o departamento
 					map.put(rs.getInt("DepartmentId"), dep);	//salva no map
 				}
-				
+
 				Seller obj = instatiateSeller(rs, dep);
 				list.add(obj);
 			}
